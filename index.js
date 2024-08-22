@@ -1,9 +1,16 @@
-
+//Use Express Server and Express Server JSON rendering
 const express = require('express')
 const app = express()
 app.use(express.json())
+app.use(express.static('dist'))
 
 
+//Use the Cross Origin Resource Sharing Library to allow Localhost:5173 to talk to Localhost:3001
+const cors = require('cors')
+app.use(cors())
+
+
+//Use the Morgan Logging Library
 const morgan = require('morgan')
 app.use(morgan('tiny'))
 
@@ -101,7 +108,7 @@ app.post('/api/persons', (request, response) => {
   }
 
   const person = {
-    id: generateId(),
+    id: generateId().toString(),
     name: body.name,
     number: body.number
   }
