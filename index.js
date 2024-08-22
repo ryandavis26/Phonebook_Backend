@@ -2,17 +2,36 @@
 const express = require('express')
 const app = express()
 app.use(express.json())
-app.use(express.static('dist'))
 
-
-const cors = require('cors')
-app.use(cors())
 
 const morgan = require('morgan')
 app.use(morgan('tiny'))
 
-let persons = [
+const logResponseBody = (req, res, next) => {
+  // Only apply to POST requests
+  if (req.method === 'POST') {
+    const originalSend = res.send;
 
+    let responseBody;
+
+    // Override the send method by capturing the body before invoking the orignal send method with its original context
+    res.send = function (body) {
+      responseBody = body; // Capture the response body
+      originalSend.apply(res, arguments); // Invoke the original send method with the old this context
+    };
+
+    // Use the 'finish' event to log the response body after the response is sent
+    res.on('finish', () => {
+      console.log(`Response Body for ${req.method} ${req.url}: ${responseBody}`);
+    });
+  }
+  next();
+};
+
+app.use(logResponseBody);
+
+
+let persons = [
   {
     "id": "1",
     "name": "Arto Hellas",
@@ -59,9 +78,7 @@ app.get('/api/persons/:id', (request, response) => {
 
 })
 
-/*
- * TODO Research a better way to randomly generate an ID that is not just randomly assign with potential collisions 
- */
+
 const generateId = () => {
   return Math.ceil(Math.random() * 10000)
 }
@@ -74,12 +91,14 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  persons.forEach(person => {
-    if (body.name === person.name)
+  
+  for (const person of persons) {
+    if(body.name === person.name){
       return response.status(400).json({
         error: 'Can\'t add duplicate names to the Phonebook'
       })
-  });
+    }
+  }
 
   const person = {
     id: generateId(),
@@ -87,7 +106,7 @@ app.post('/api/persons', (request, response) => {
     number: body.number
   }
   persons = persons.concat(person)
-  response.json(persons)
+  response.json(person)
 })
 
 app.delete('/api/persons/:id', (request, response) => {
@@ -95,6 +114,8 @@ app.delete('/api/persons/:id', (request, response) => {
   persons = persons.filter(person => person.id !== id)
   response.status(204).end()
 })
+
+
 const PORT = process.env.PORT || 3001
 
 app.listen(PORT, () => {
