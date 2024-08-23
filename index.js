@@ -5,6 +5,7 @@ app.use(express.json())
 app.use(express.static('dist'))
 
 
+
 //Use the Cross Origin Resource Sharing Library to allow Localhost:5173 to talk to Localhost:3001
 const cors = require('cors')
 app.use(cors())
@@ -22,7 +23,7 @@ const logResponseBody = (req, res, next) => {
     let responseBody;
 
     // Override the send method by capturing the body before invoking the orignal send method with its original context
-    res.send = function (body) {
+    res.send = function(body) {
       responseBody = body; // Capture the response body
       originalSend.apply(res, arguments); // Invoke the original send method with the old this context
     };
@@ -98,9 +99,9 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  
+
   for (const person of persons) {
-    if(body.name === person.name){
+    if (body.name === person.name) {
       return response.status(400).json({
         error: 'Can\'t add duplicate names to the Phonebook'
       })
