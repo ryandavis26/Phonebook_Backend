@@ -11,7 +11,7 @@ const url =
   `mongodb+srv://ryandavisim:${password}@cluster0.495ag.mongodb.net/Phonebook?retryWrites=true&w=majority`
 
 mongoose.set('strictQuery', false)
-//
+
 
 mongoose.connect(url).then(() => {
   const personSchema = new mongoose.Schema({
