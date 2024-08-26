@@ -40,34 +40,41 @@ const logResponseBody = (req, res, next) => {
 
 //Use the Cross Origin Resource Sharing Library to allow Localhost:5173 to talk to Localhost:3001
 const cors = require('cors')
+const person = require('./models/person')
 app.use(cors())
 
-
 app.use(logResponseBody);
-
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
+//
+//Sends and error whent the API recieves a request to an unknown url endpoint
+//Must be declared afte the requests are made
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
+//Middleware to handle arrors when attempting to look up or delete persons that do not exists
+const errorHandler = (error, request, response, next) => {
+  console.log(error.message)
 
 
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'Malformed id' })
+  }
+
+  next(error)
+}
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 
 app.get('/info', (request, response) => {
-  let personsLength = persons.length
-  let curTime = new Date()
-  return response.send(
-    `<p>Phonebook has info for ${personsLength} people </p>` + `<p> ${curTime}</p>`
-  )
+
+  const todayDate = new Date(Date.now())
+  Person.countDocuments().then(personCount => {
+    response.send(`<h1> The database has ${personCount} of people in it</h1>
+    <h2>The current time is ${todayDate.toDateString()}<h2>`)
+  })
+
 })
 
 app.get('/api/persons', (request, response) => {
@@ -76,26 +83,31 @@ app.get('/api/persons', (request, response) => {
   })
 })
 
-app.get('/api/persons/:id', (request, response) => {
-  Person.findById(request.params.id).then(person => {
-    response.json(person)
-  })
+app.get('/api/persons/:id', (request, response, next) => {
+  Person.findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 
 })
 
 
-const generateId = () => {
-  return Math.ceil(Math.random() * 10000)
-}
-
 app.post('/api/persons', (request, response) => {
   const body = request.body
 
-
   if (body === undefined) {
-
     return response.status(404).send({ error: 'body of request is undefined: content missing' })
   }
+
+  if (body.name === undefined || body.number === undefined) {
+    return response.status(404).send({ error: 'error in handling body of request: name or number misssing' })
+  }
+
 
   const person = new Person({
     name: body.name,
@@ -108,12 +120,17 @@ app.post('/api/persons', (request, response) => {
     })
 })
 
-app.delete('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  persons = persons.filter(person => person.id !== id)
-  response.status(204).end()
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person.findByIdAndDelete(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
+
+app.use(unknownEndpoint)
+app.use(errorHandler)
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {
