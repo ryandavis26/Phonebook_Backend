@@ -54,11 +54,15 @@ const unknownEndpoint = (request, response) => {
 const errorHandler = (error, request, response, next) => {
   console.log(error.message)
 
-
+  //Handle the error if you submit an invalid id to the api, which mongo can't cast into a valid id
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'Malformed id' })
   }
+  //Handle the error if you try to pass an invalid type of length to name/number
+  else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
 
+  }
   next(error)
 }
 //////////////////////////////////////////////////////////////////////////////
@@ -97,16 +101,16 @@ app.get('/api/persons/:id', (request, response, next) => {
 })
 
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
   if (body === undefined) {
     return response.status(404).send({ error: 'body of request is undefined: content missing' })
   }
 
-  if (body.name === undefined || body.number === undefined) {
-    return response.status(404).send({ error: 'error in handling body of request: name or number misssing' })
-  }
+  //if (body.name === undefined || body.number === undefined) {
+  //  return response.status(400).send({ error: 'error in handling body of request: name or number misssing' })
+  //}
 
 
   const person = new Person({
@@ -118,6 +122,7 @@ app.post('/api/persons', (request, response) => {
     .then(savedPerson => {
       response.json(savedPerson)
     })
+    .catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
