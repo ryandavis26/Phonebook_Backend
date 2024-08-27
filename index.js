@@ -7,10 +7,6 @@ app.use(express.static('dist'))
 
 const Person = require('./models/person')
 
-let persons = [
-
-]
-
 
 //Use the Morgan Logging Library
 const morgan = require('morgan')
@@ -19,31 +15,30 @@ app.use(morgan('tiny'))
 const logResponseBody = (req, res, next) => {
   // Only apply to POST requests
   if (req.method === 'POST') {
-    const originalSend = res.send;
+    const originalSend = res.send
 
-    let responseBody;
+    let responseBody
 
     // Override the send method by capturing the body before invoking the orignal send method with its original context
     res.send = function(body) {
-      responseBody = body; // Capture the response body
-      originalSend.apply(res, arguments); // Invoke the original send method with the old this context
-    };
+      responseBody = body // Capture the response body
+      originalSend.apply(res, arguments) // Invoke the original send method with the old this context
+    }
 
     // Use the 'finish' event to log the response body after the response is sent
     res.on('finish', () => {
-      console.log(`Response Body for ${req.method} ${req.url}: ${responseBody}`);
-    });
+      console.log(`Response Body for ${req.method} ${req.url}: ${responseBody}`)
+    })
   }
-  next();
-};
+  next()
+}
 
 
 //Use the Cross Origin Resource Sharing Library to allow Localhost:5173 to talk to Localhost:3001
 const cors = require('cors')
-const person = require('./models/person')
 app.use(cors())
 
-app.use(logResponseBody);
+app.use(logResponseBody)
 //
 //Sends and error whent the API recieves a request to an unknown url endpoint
 //Must be declared afte the requests are made
@@ -107,11 +102,6 @@ app.post('/api/persons', (request, response, next) => {
   if (body === undefined) {
     return response.status(404).send({ error: 'body of request is undefined: content missing' })
   }
-
-  //if (body.name === undefined || body.number === undefined) {
-  //  return response.status(400).send({ error: 'error in handling body of request: name or number misssing' })
-  //}
-
 
   const person = new Person({
     name: body.name,

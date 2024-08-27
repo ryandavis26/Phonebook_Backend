@@ -32,10 +32,10 @@ mongoose.connect(url).then(() => {
 
 
 
-  //IF the given system arguments doesn't include a name and number then print all the person 
+  //IF the given system arguments doesn't include a name and number then print all the person
   //Otherwise add the person to the database using the given name and number
   if (process.argv.length < 5) {
-    console.log("Phonebook")
+    console.log('Phonebook')
     getAllNotes
   } else {
     const person = new Person({
